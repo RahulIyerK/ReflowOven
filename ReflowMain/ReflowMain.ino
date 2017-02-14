@@ -5,7 +5,7 @@ int steps, phases;
 
 void setup() {
   // put your setup code here, to run once:
-  Serial.
+  Serial. //test
   currenttemp = /*Room Temperature*/;
   setpointtemp = /*Soak Temperature*/;
   t = /*Relative to whatever we have -> (incrementSize*steps)*/;
