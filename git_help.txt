@@ -1,0 +1,24 @@
+git pull : pulls content from server to your machine’s file system
+
+git status : displays status of all files (unstaged (not added), staged (added), etc.)
+
+git add filename : stages file named filename for commit (sets it up to be added)
+
+git commit -m “message” : creates new commit to repository where staged (added) files are committed.  The commit message message shows up in the repo log.
+
+git commit -a -m “message” : creates new commit with all unstaged files (adds all unstaged files first then commits all of them in a single commit…this isn’t recommended because you may be committing files that shouldn’t be on the server such as .DS_STORE files, etc.)
+
+git push : pushes commit(s) to the repo
+
+
+————
+
+
+Typical workflow:
+
+1. git pull
+2. work on files
+3. git status
+4. git add files
+5. git commit -m files
+6. git push
