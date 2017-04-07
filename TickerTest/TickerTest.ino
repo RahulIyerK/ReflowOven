@@ -1,31 +1,62 @@
 #include <Ticker.h>
 
-#define LED1 1
-#define LED2 2
-#define TICK_SECONDS 0.3
+#define LED1 12            
 
-Ticker flipper;
+#define PWM_PERIOD 1000 //milliseconds
 
-int count = 0;
+double dutyCycle = .75;
 
-void flip()
+unsigned long onTime = dutyCycle * PWM_PERIOD;
+
+Ticker flasher;
+
+
+
+void flash() //this function is called every PWM_PERIOD milliseconds
 {
-  bool state = digitalRead(lED1);  // get the current state of GPIO1 pin
-  digitalWrite(LED1, !state);     // set pin to the opposite state
-}
-
-void setup() {
-  pinMode(LED1, OUTPUT);
-  pinMode(LED2, OUTPUT);
-  digitalWrite(LED1, LOW);
+  wdt_disable();
+  unsigned long startMillis = millis();
+  unsigned long endMillis = startMillis + PWM_PERIOD;
   
-  // flip the pin every 0.3s
-  flipper.attach(TICK_SECONDS, flip);
+  Serial.print(startMillis);
+  Serial.print(" ");
+  Serial.println(onTime);
+  
+  unsigned long curMillis = startMillis;
+  unsigned long stopMillis =  startMillis + onTime;
+
+  while (curMillis < endMillis)
+  {
+      if (curMillis <= stopMillis)
+      {
+        Serial.println("writing HIGH");
+        digitalWrite(LED1, HIGH);
+      }
+      else
+      {
+        Serial.println("writing LOW");
+        digitalWrite(LED1, LOW);
+      }
+      
+      curMillis++;
+  }
+  wdt_enable(WDTO_2S);
 }
 
-void loop() {
-  digitalWrite (LED2, HIGH);
-  delay (1000);
-  digitalWrite (LED2, LOW);
-  delay (1000);
+void setup() 
+{
+  Serial.begin(115200);
+  pinMode(LED1, OUTPUT);
+  
+  digitalWrite(LED1, LOW);
+  flasher.attach_ms(PWM_PERIOD, flash);
+  
+}
+
+void loop() 
+{
+//  digitalWrite(LED1, HIGH);
+//  delay (250);
+//  digitalWrite(LED1, LOW);
+//  delay (250);
 }
