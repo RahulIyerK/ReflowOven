@@ -1,4 +1,3 @@
-bool running = TRUE;
 
 struct reflowPoint
 {
@@ -16,7 +15,7 @@ struct reflowProfile
   reflowPoint peaks[];
 };
 
-void process_peaks(reflowProfile *profile)
+void process_peaks(struct reflowProfile *profile)
 {
   (profile->m_nextPeak)++;
   unsigned long cur_time;
@@ -53,8 +52,8 @@ bool runCurStep(uint16_t target_temp, uint16_t prev_temp, unsigned long target_t
 }
 void setUpProfile(uint16_t* temps, uint8_t num_peaks, uint16_t* times)
 {
-  reflowProfile *profile = malloc(offsetof(struct reflowProfile, peaks) + sizeof(int) * num_peaks);
-  profile->m_numSteps = num_peaks;
+  reflowProfile *profile = (reflowProfile*)(malloc(offsetof(struct reflowProfile, peaks) + sizeof(int) * num_peaks));
+  profile->m_numPoints = num_peaks;
 
   //initial
   for (int i = 0; i < num_peaks; i++) {
