@@ -1,11 +1,38 @@
+#include <Ticker.h> //library for the timed software interrupt that we use for our custom PWM
+
 #define incrementSize
 #define temperature
 double setpointemp, currenttemp, t;
 int steps, phase = 0, counter = 0;
 //test comment
 /////////////////////////////////////////////////////////////////////////////////////////////////
-// Main Functions
+// PWM Ticker
 /////////////////////////////////////////////////////////////////////////////////////////////////
+
+#define TICK_LENGTH 20 //tick length in milliseconds
+#define FULL_DUTY_VAL 100 //max duty cycle value allowed
+
+#define relay 2 //digital pin for switching relay
+
+uint8_t pwm_dutyCycle = 0; //percentage (min 0, max 100DUTY_VAL)
+
+Ticker ticker;
+
+int pwm_counter = 0;
+
+void tick() //this function is called every TICK_LENGTH milliseconds
+{
+  if (pwm_counter >= FULL_DUTY_VAL) //reached end of a period, so we reset everything
+  {
+    pwm_counter = 0;
+  }
+  
+  digitalWrite(relay, (pwm_counter < pwm_dutyCycle));
+  
+  pwm_counter++;
+
+//Serial.println(pwm_counter);  
+}
 
 void setup() {
     // put your setup code here, to run once:
@@ -14,6 +41,8 @@ void setup() {
     //setpointtemp = /*Soak Temperature*/;
    // t = /*Relative to whatever we have -> (incrementSize*steps)*/;
  //   steps = (setpointtemp - currenttemp)/t;
+
+ ticker.attach_ms(TICK_LENGTH, tick);
 }
 
 void loop() {
@@ -70,31 +99,6 @@ uint16_t getTemp() {
 /////////////////////////////////////////////////////////////////////////////////////////////////
 // Useful Functions
 /////////////////////////////////////////////////////////////////////////////////////////////////
-
-double total_error = 0;
-
-void PID(uint16_t setPoint,uint16_t currentTemp){
-  //Set the endtime with a value relative to the phase of the profile it is in
-  
-  double error = 0, derivative = 0, correction = 0, prev_error = -999;
-  
-  //Find how to set Kp, Ki, Kd
-  double Kp, Ki, Kd;
-            
-  //PID
-  error = setPoint - currentTemp;
-  total_error += error;
-  if(prev_error != -999)
-    derivative = error - prev_error;
-  correction = Kp*error + Ki*total_error + Kd*derivative;
-  prev_error = error;
-
-  //Change temperature based on PID
-  currentTemp += correction;
-    
-  //Write to PWM
-
-}
 
 
 

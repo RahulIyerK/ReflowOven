@@ -1,3 +1,8 @@
+#define Kp 1.0
+#define Ki 1.0
+#define Kd 1.0
+
+double total_error = 0;
 
 struct reflowPoint
 {
@@ -42,7 +47,9 @@ void process_peaks(struct reflowProfile *profile)
 
   }
 }
-bool runCurStep(uint16_t target_temp, uint16_t prev_temp, unsigned long target_time, unsigned long start_time) {
+
+bool runCurStep(uint16_t target_temp, uint16_t prev_temp, unsigned long target_time, unsigned long start_time) 
+{
   unsigned long cur_time = millis() - start_time;
   float slope = (float)(target_temp - prev_temp) / target_time;
   while (cur_time < target_time) {
@@ -50,6 +57,7 @@ bool runCurStep(uint16_t target_temp, uint16_t prev_temp, unsigned long target_t
     PID(prev_temp + slope * cur_time, getTemp()); //PID implements change in temp, analogWrites
   }
 }
+
 void setUpProfile(uint16_t* temps, uint8_t num_peaks, uint16_t* times)
 {
   reflowProfile *profile = (reflowProfile*)(malloc(offsetof(struct reflowProfile, peaks) + sizeof(int) * num_peaks));
@@ -62,3 +70,24 @@ void setUpProfile(uint16_t* temps, uint8_t num_peaks, uint16_t* times)
   }
   process_peaks(profile);
 }
+
+void PID(uint16_t setPoint,uint16_t currentTemp)
+{  
+  double error = 0, derivative = 0, correction = 0, prev_error = -999; //fix
+
+            
+  //PID
+  error = setPoint - currentTemp;
+  total_error += error;
+  if(prev_error != -999)
+    derivative = error - prev_error;
+  correction = Kp*error + Ki*total_error + Kd*derivative;
+  prev_error = error;
+
+  //Change temperature based on PID
+  currentTemp += correction;
+    
+  //Write to PWM
+
+}
+
