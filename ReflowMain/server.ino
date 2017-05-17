@@ -1,23 +1,5 @@
-/*
-  To upload through terminal you can use: curl -F "image=@firmware.bin" esp8266-webupdate.local/update
-*/
-#include "FS.h"
-#include <ESP8266WiFi.h>
-#include <WiFiClient.h>
-#include <ESP8266WebServer.h>
-#include <ESP8266mDNS.h>
-
-const char* host = "esp8266-webupdate";
-const char* ssid = "IEEE 2.4GHz";
-const char* password = "Ilovesolder";
-bool isWritten= false;
-ESP8266WebServer server(80);
-const char* serverIndex = "<form method='POST' action='/update' enctype='multipart/form-data'><input type='file' name='update'><input type='submit' value='Update'></form>";
-File f;
-void setup(void){
-  Serial.begin(115200);
-  Serial.println();
-  ticker.attach_ms(TICK_LENGTH, tick);
+bool initFS() //returns true if the file system was initialized correctly; returns false if the initialization failed
+{
   bool result=SPIFFS.begin(); 
   Serial.println("Booting Sketch...");
   WiFi.mode(WIFI_AP_STA);
@@ -51,30 +33,11 @@ void setup(void){
     MDNS.addService("http", "tcp", 80);
   
     Serial.printf("Ready! Open http://%s.local in your browser\n", host);
+    return true;
   } else {
     Serial.println("WiFi Failed");
+    return false;
   }
 }
- 
-void loop(void){
-  server.handleClient();
-  delay(1);
-  if (isWritten){
-    Serial.println("file available");
-    File fo = SPIFFS.open("/f.txt", "r");
-    while(fo.available()) {
-      String line = fo.readStringUntil('\n');
-      //Lets read line by line from the file
-      int index = line.indexOf(',');
-      int temp=line.substring(0,index).toInt();
-      int start=index;
-      index = line.indexOf(',',start+1);
-      int time=line.substring(start+1,index).toInt();
-      // Call heating step here
-      Serial.print(temp); Serial.print('\t'); 
-      Serial.println(time); 
-    }
-    fo.close();
-    isWritten=false;
-  }
-} 
+
+
