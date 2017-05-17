@@ -4,12 +4,13 @@
 
 double total_error = 0;
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Structures used to store reflow profile
+////////////////////////////////////////////////////////////////////////////////////////////////////////
 struct reflowPoint
 {
-  //time is in seconds
-  //temp is in Celsius
-  int time;
-  int temp;
+  int time; //time between steps (seconds)
+  int temp; //target temperature for step (1/4 Celsius)
 };
 struct reflowProfile
 {
@@ -20,12 +21,19 @@ struct reflowProfile
   reflowPoint peaks[];
 };
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Useful Functions
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 void process_peaks(struct reflowProfile *profile)
 {
+  
   (profile->m_nextPeak)++;
   unsigned long cur_time;
   unsigned long start_time = millis();
   int target_temp = profile->peaks[profile->m_nextPeak].temp;
+  unsigned long target_time = profile->peaks[profile->m_nextPeak].time * 1000;
+  
   // read in room temp, average value
   uint32_t ovenTemp = 0;
   for (int i = 0; i < 10; i++) {
@@ -33,18 +41,20 @@ void process_peaks(struct reflowProfile *profile)
   }
   ovenTemp /= 10;
   uint16_t prev_temp = (uint16_t)ovenTemp;
-  unsigned long target_time = profile->peaks[profile->m_nextPeak].time * 1000;
 
   while (true) {
+    // Follow path for current step
     runCurStep(target_temp, prev_temp, target_time, start_time);
+
+    //Get ready for next step
     ++(profile->m_nextPeak);
     if (profile->m_nextPeak >= profile->m_numPoints)
       break;
+
     target_temp = profile->peaks[profile->m_nextPeak].temp;
     prev_temp = profile->peaks[profile->m_nextPeak - 1].temp;
     target_time = profile->peaks[profile->m_nextPeak].time * 1000;
     start_time = millis();
-
   }
 }
 
@@ -60,13 +70,14 @@ bool runCurStep(uint16_t target_temp, uint16_t prev_temp, unsigned long target_t
 
 void setUpProfile(uint16_t* temps, uint8_t num_peaks, uint16_t* times)
 {
+  //dynamically allocate enough space for reflopoints
   reflowProfile *profile = (reflowProfile*)(malloc(offsetof(struct reflowProfile, peaks) + sizeof(int) * num_peaks));
   profile->m_numPoints = num_peaks;
 
-  //initial
+  //creates the profile
   for (int i = 0; i < num_peaks; i++) {
     profile->peaks[i].time = times[i];
-    profile->peaks[i].temp = temps[i];
+    profile->peaks[i].temp = temps[i]<<2;
   }
   process_peaks(profile);
 }
@@ -74,7 +85,6 @@ void setUpProfile(uint16_t* temps, uint8_t num_peaks, uint16_t* times)
 void PID(uint16_t setPoint,uint16_t currentTemp)
 {  
   double error = 0, derivative = 0, correction = 0, prev_error = -999; //fix
-
             
   //PID
   error = setPoint - currentTemp;
@@ -88,6 +98,6 @@ void PID(uint16_t setPoint,uint16_t currentTemp)
   currentTemp += correction;
     
   //Write to PWM
-
+  
 }
 
