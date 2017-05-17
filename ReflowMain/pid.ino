@@ -40,7 +40,7 @@ void process_peaks(struct reflowProfile *profile)
     ovenTemp += getTemp();
   }
   ovenTemp /= 10;
-  uint32_t prev_temp = (uint32_t)ovenTemp;
+  uint16_t prev_temp = (uint16_t)ovenTemp;
 
   while (true) {
     // Follow path for current step
@@ -58,7 +58,7 @@ void process_peaks(struct reflowProfile *profile)
   }
 }
 
-bool runCurStep(uint32_t target_temp, uint32_t prev_temp, unsigned long target_time, unsigned long start_time) 
+bool runCurStep(uint16_t target_temp, uint16_t prev_temp, unsigned long target_time, unsigned long start_time) 
 {
   unsigned long cur_time = millis() - start_time;
   float slope = (float)(target_temp - prev_temp) / target_time;
@@ -68,7 +68,7 @@ bool runCurStep(uint32_t target_temp, uint32_t prev_temp, unsigned long target_t
   }
 }
 
-void setUpProfile(uint32_t* temps, uint8_t num_peaks, uint32_t* times)
+void setUpProfile(uint16_t* temps, uint8_t num_peaks, uint16_t* times)
 {
   //dynamically allocate enough space for reflopoints
   reflowProfile *profile = (reflowProfile*)(malloc(offsetof(struct reflowProfile, peaks) + sizeof(int) * num_peaks));
@@ -77,12 +77,12 @@ void setUpProfile(uint32_t* temps, uint8_t num_peaks, uint32_t* times)
   //creates the profile
   for (int i = 0; i < num_peaks; i++) {
     profile->peaks[i].time = times[i];
-    profile->peaks[i].temp = temps[i]<<2;
+    profile->peaks[i].temp = temps[i]<<2; //convert to units of Celsius from 1/4 Celsius
   }
   process_peaks(profile);
 }
 
-void PID(uint32_t setPoint,uint32_t currentTemp)
+void PID(uint16_t setPoint,uint16_t currentTemp)
 {  
   double error = 0, derivative = 0, correction = 0, prev_error = -999; //fix
             

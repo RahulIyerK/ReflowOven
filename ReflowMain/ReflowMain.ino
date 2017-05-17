@@ -70,21 +70,24 @@ void tick() //this function is called every TICK_LENGTH milliseconds
 // Helper Functions
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-uint32_t getTemp() 
+uint16_t getTemp() 
 {
-  
-  //returns temperature in 1/4 Celsius
+   /*
+   * The readCelsius() method actually returns 32-bit signed integers representing
+   * 14-bit temperature values in 1/4 Celsius
+   * 
+   * We're going to assume that we never get negative temperatures in the oven, so we'll just
+   * convert these values to uint16_t 
+   */
 
-  uint32_t temp = (uint32_t)(thermocouple.readCelsius());
+  uint16_t temp = (uint16_t)(thermocouple.readCelsius());
   
   if (isnan(temp))
   {
     return 0; //define 0 to be an error code (we'll have to check for this later)
   }
   
-  return temp; //the readCelcius() function actually returns
-               //32-bit signed integers, but we're going to 
-               //assume that we never get negative temperatures
+  return temp; 
                                                  
 }
 
