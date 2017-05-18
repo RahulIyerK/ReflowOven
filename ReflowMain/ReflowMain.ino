@@ -96,12 +96,10 @@ void setup(){
   Serial.begin(115200);
   while (!Serial) delay(1); //wait for Serial
 
-  initFS();
-
-  //set up relay control pin and PWM ticker
+  initProfile(); //initialize the server and filesystem, and the read the profile
   
-  pinMode(relay, OUTPUT);
-  ticker.attach_ms(TICK_LENGTH, tick);
+  pinMode(relay, OUTPUT); //set up relay control pin as output
+  ticker.attach_ms(TICK_LENGTH, tick); //set up PWM ticker
   
 }
 
@@ -109,6 +107,7 @@ void loop()
 {
   server.handleClient();
   delay(1);
+  
   if (isWritten){
     Serial.println("file available");
     File fo = SPIFFS.open("/f.txt", "r");
@@ -120,13 +119,16 @@ void loop()
       int start=index;
       index = line.indexOf(',',start+1);
       int time=line.substring(start+1,index).toInt();
+      
       // Call heating step here
+      
       Serial.print(temp); Serial.print('\t'); 
       Serial.println(time); 
     }
     fo.close();
     isWritten=false;
   }
+  
 } 
 
 
