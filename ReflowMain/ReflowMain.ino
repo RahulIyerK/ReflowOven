@@ -81,36 +81,73 @@ uint16_t getTemp()
    */
 
   uint16_t temp = (uint16_t)(thermocouple.readCelsius());
-  
   if (isnan(temp))
-  {
     return 0; //define 0 to be an error code (we'll have to check for this later)
-  }
-  
   return temp; 
-                                                 
 }
 
+
+/////////////////////////////////////////////////////////////////////////////////////////////////
+// Temperature "Control" fnctions
+/////////////////////////////////////////////////////////////////////////////////////////////////
+
+void PID(uint16_t setPoint,uint16_t currentTemp)
+{
+  double error = 0, derivative = 0, correction = 0, prev_error = -999; //fix
+
+  //PID
+  error = setPoint - currentTemp;
+  total_error += error;
+  if(prev_error != -999)
+    derivative = error - prev_error;
+  correction = Kp*error + Ki*total_error + Kd*derivative;
+  prev_error = error;
+
+  //Change temperature based on PID
+  currentTemp += correction;
+
+  //Write to PWM
+
+}
+
+bool runCurStep(uint16_t target_temp, uint16_t prev_temp, unsigned long target_time, unsigned long start_time) 
+{
+  unsigned long cur_time = millis() - start_time;
+  float slope = (float)(target_temp - prev_temp) / target_time;
+  while (cur_time < target_time) {
+    cur_time = millis() - start_time;
+    PID(prev_temp + slope * cur_time, getTemp()); //PID implements change in temp, analogWrites
+  }
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////
+// Main Loop
+/////////////////////////////////////////////////////////////////////////////////////////////////
+
 void setup(){
-  
+
   Serial.begin(115200);
   while (!Serial) delay(1); //wait for Serial
 
   initProfile(); //initialize the server and filesystem, and the read the profile
-  
+
   pinMode(relay, OUTPUT); //set up relay control pin as output
   ticker.attach_ms(TICK_LENGTH, tick); //set up PWM ticker
-  
+
 }
 
 void loop()
 {
   server.handleClient();
   delay(1);
-  
+
   if (isWritten){
     Serial.println("file available");
     File fo = SPIFFS.open("/f.txt", "r");
+
+    //get room temperature
+    int prev_temp = 0;
+
     while(fo.available()) {
       String line = fo.readStringUntil('\n');
       //Lets read line by line from the file
@@ -119,17 +156,20 @@ void loop()
       int start=index;
       index = line.indexOf(',',start+1);
       int time=line.substring(start+1,index).toInt();
-      
+
       // Call heating step here
-      
+      runCurStep(temp, prev_temp, time, millis());
+
+      prev_temp = temp;
+
+        //these were for testing
       Serial.print(temp); Serial.print('\t'); 
       Serial.println(time); 
     }
     fo.close();
     isWritten=false;
   }
-  
-} 
+}
 
 
 
