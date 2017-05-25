@@ -1,6 +1,9 @@
-#include <Ticker.h> //library for the timed software interrupt that we use for our custom PWM
+//library for the timed software interrupt that we use for our custom PWM
+#include <Ticker.h>
 
-#include "FS.h" //library for ESP8266 filesystem
+//library for ESP8266 filesystem
+#include "FS.h"
+//libraries to set up web server
 #include <ESP8266WiFi.h>
 #include <WiFiClient.h>
 #include <ESP8266WebServer.h>
@@ -36,7 +39,6 @@ ESP8266WebServer server(80); //initialize esp8266 webserver at port 80
 const char* serverIndex = "<form method='POST' action='/update' enctype='multipart/form-data'><input type='file' name='update'><input type='submit' value='Update'></form>";
 File f;
 
-
 /**************
  * PWM ticker *
  **************/
@@ -55,14 +57,10 @@ int pwm_counter = 0;
 void tick() //this function is called every TICK_LENGTH milliseconds
 {
   if (pwm_counter >= FULL_DUTY_VAL) //reached end of a period, so we reset everything
-  {
     pwm_counter = 0;
-  }
 
   digitalWrite(relay, (pwm_counter < pwm_dutyCycle));
-
   pwm_counter++;
-
   //Serial.println(pwm_counter);
 }
 
@@ -93,6 +91,11 @@ uint16_t getTemp()
 
 void PID(uint16_t setPoint,uint16_t currentTemp)
 {
+  /*
+   * takes in the desired temperature, and the current temperature
+   * implements standard PID
+   * calls PWM to change reflow oven temperature
+   */
   double error = 0, derivative = 0, correction = 0, prev_error = -999; //fix
 
   //PID
@@ -112,6 +115,13 @@ void PID(uint16_t setPoint,uint16_t currentTemp)
 
 bool runCurStep(uint16_t target_temp, uint16_t prev_temp, unsigned long target_time, unsigned long start_time) 
 {
+  /*
+  * target_temp is the temperature at the end of the step.
+  * prev_temp is the temperature at start of the step.
+  * target_time is the time the step should run for.
+  * start_time is the millis() time when the function is called 
+  */
+
   unsigned long cur_time = millis() - start_time;
   float slope = (float)(target_temp - prev_temp) / target_time;
   while (cur_time < target_time) {
@@ -136,6 +146,11 @@ void setup(){
 
 }
 
+/*
+ * TODO: notify website if oven is in use
+ * allow oven to stop halfway through
+ * more aesthetics in front end
+ */
 void loop()
 {
   server.handleClient();
@@ -145,10 +160,21 @@ void loop()
     Serial.println("file available");
     File fo = SPIFFS.open("/f.txt", "r");
 
-    //get room temperature
-    int prev_temp = 0;
+    /*
+     * get room temperature
+     */
+    uint32_t ovenTemp = 0;
+    for (int i = 0; i < 10; i++) {
+      ovenTemp += getTemp();
+    }
+    ovenTemp /= 10;
+    uint16_t prev_temp = (uint16_t)ovenTemp;
 
+    //this while loop runs the entire profile
     while(fo.available()) {
+      /*
+       * parses the string and runs current step with parsed string
+       */
       String line = fo.readStringUntil('\n');
       //Lets read line by line from the file
       int index = line.indexOf(',');
@@ -162,14 +188,13 @@ void loop()
 
       prev_temp = temp;
 
-        //these were for testing
+      //these were for testing
       Serial.print(temp); Serial.print('\t'); 
       Serial.println(time); 
     }
     fo.close();
     isWritten=false;
   }
+  
+  initProfile(); //reinitialize for next profile
 }
-
-
-
